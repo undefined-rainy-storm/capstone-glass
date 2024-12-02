@@ -1,49 +1,29 @@
-#include "esp_camera.h"
 #include <BLEDevice.h>
 #include <BLEServer.h>
 #include <BLEUtils.h>
 #include <BLE2902.h>
-
-// Camera pins for AI Thinker ESP32-CAM
-#define PWDN_GPIO_NUM 32
-#define RESET_GPIO_NUM -1
-#define XCLK_GPIO_NUM 0
-#define SIOD_GPIO_NUM 26
-#define SIOC_GPIO_NUM 27
-#define Y9_GPIO_NUM 35
-#define Y8_GPIO_NUM 34
-#define Y7_GPIO_NUM 39
-#define Y6_GPIO_NUM 36
-#define Y5_GPIO_NUM 21
-#define Y4_GPIO_NUM 19
-#define Y3_GPIO_NUM 18
-#define Y2_GPIO_NUM 5
-#define VSYNC_GPIO_NUM 25
-#define HREF_GPIO_NUM 23
-#define PCLK_GPIO_NUM 22
-
-// BLE settings
-#define SERVICE_UUID "4fafc201-1fb5-459e-8fcc-c5c9c331914b"
-#define CHARACTERISTIC_UUID "beb5483e-36e1-4688-b7f5-ea07361b26a8"
+#include "esp_camera.h"
+#include "config.h"
 
 BLEServer* pServer = NULL;
 BLECharacteristic* pCharacteristic = NULL;
 bool deviceConnected = false;
-const int MTU_SIZE = 512;  // Maximum transmission unit size
 
-class ServerCallbacks : public BLEServerCallbacks {
-  void onConnect(BLEServer* pServer) {
-    deviceConnected = true;
-  }
-  void onDisconnect(BLEServer* pServer) {
-    deviceConnected = false;
-  }
+class MyServerCallbacks: public BLEServerCallbacks {
+    void onConnect(BLEServer* pServer) {
+      deviceConnected = true;
+      Serial.println("Device connected");
+    }
+
+    void onDisconnect(BLEServer* pServer) {
+      deviceConnected = false;
+      Serial.println("Device disconnected");
+      // Restart advertising to allow new connections
+      pServer->startAdvertising();
+    }
 };
 
-void setup() {
-  Serial.begin(115200);
-
-  // Configure camera
+void initCamera() {
   camera_config_t config;
   config.ledc_channel = LEDC_CHANNEL_0;
   config.ledc_timer = LEDC_TIMER_0;
@@ -66,9 +46,9 @@ void setup() {
   config.xclk_freq_hz = 20000000;
   config.pixel_format = PIXFORMAT_JPEG;
 
-  // Image quality settings
-  config.frame_size = FRAMESIZE_QVGA;
-  config.jpeg_quality = 12;  // 0-63, lower means higher quality
+  // Frame size and quality
+  config.frame_size = FRAMESIZE_QVGA;   // 320x240
+  config.jpeg_quality = 6;             // 0-63, lower means higher quality
   config.fb_count = 1;
 
   // Initialize camera
@@ -78,55 +58,105 @@ void setup() {
     return;
   }
 
-  // Initialize BLE
-  BLEDevice::init("ESP32-CAM");
-  pServer = BLEDevice::createServer();
-  pServer->setCallbacks(new ServerCallbacks());
+  // Adjust camera settings
+  sensor_t * s = esp_camera_sensor_get();
+  s->set_brightness(s, 0);     // -2 to 2
+  s->set_contrast(s, 0);       // -2 to 2
+  s->set_saturation(s, 0);     // -2 to 2
+  s->set_special_effect(s, 0); // 0 to 6 (0 - No Effect, 1 - Negative, 2 - Grayscale, 3 - Red Tint, 4 - Green Tint, 5 - Blue Tint, 6 - Sepia)
+}
 
-  BLEService* pService = pServer->createService(SERVICE_UUID);
+void initBLE() {
+  // Initialize BLE device
+  BLEDevice::init("ESP32-CAM");
+  
+  // Create BLE Server
+  pServer = BLEDevice::createServer();
+  pServer->setCallbacks(new MyServerCallbacks());
+
+  // Create BLE Service
+  BLEService *pService = pServer->createService(SERVICE_UUID);
+
+  // Create BLE Characteristic
   pCharacteristic = pService->createCharacteristic(
-    CHARACTERISTIC_UUID,
-    BLECharacteristic::PROPERTY_READ | BLECharacteristic::PROPERTY_WRITE | BLECharacteristic::PROPERTY_NOTIFY);
+                      CHARACTERISTIC_UUID,
+                      BLECharacteristic::PROPERTY_READ   |
+                      BLECharacteristic::PROPERTY_WRITE  |
+                      BLECharacteristic::PROPERTY_NOTIFY |
+                      BLECharacteristic::PROPERTY_INDICATE
+                    );
+
+  // Create a BLE Descriptor
   pCharacteristic->addDescriptor(new BLE2902());
+
+  // Start the service
   pService->start();
 
-  BLEAdvertising* pAdvertising = BLEDevice::getAdvertising();
+  // Start advertising
+  BLEAdvertising *pAdvertising = BLEDevice::getAdvertising();
   pAdvertising->addServiceUUID(SERVICE_UUID);
-  pAdvertising->setScanResponse(true);
-  pAdvertising->setMinPreferred(0x06);
-  pAdvertising->setMinPreferred(0x12);
+  pAdvertising->setScanResponse(false);
+  pAdvertising->setMinPreferred(0x0);  // functions that help with iPhone connections issue
   BLEDevice::startAdvertising();
+
+  // Set MTU size
+  BLEDevice::setMTU(MTU_SIZE);
+  
+  Serial.println("BLE device ready");
+}
+
+void sendFrame(uint8_t* frame_buffer, size_t frame_length) {
+  if (!deviceConnected) return;
+
+  // Send frame size first (4 bytes)
+  uint8_t size_buffer[4];
+  size_buffer[0] = (frame_length >> 24) & 0xFF;
+  size_buffer[1] = (frame_length >> 16) & 0xFF;
+  size_buffer[2] = (frame_length >> 8) & 0xFF;
+  size_buffer[3] = frame_length & 0xFF;
+  pCharacteristic->setValue(size_buffer, 4);
+  pCharacteristic->notify();
+  delay(10); // Small delay to ensure proper transmission
+
+  // Send frame data in chunks
+  size_t chunk_size = MTU_SIZE - 3; // Account for BLE overhead
+  size_t sent = 0;
+  
+  while (sent < frame_length) {
+    size_t remaining = frame_length - sent;
+    size_t current_chunk_size = (remaining < chunk_size) ? remaining : chunk_size;
+    
+    pCharacteristic->setValue(&frame_buffer[sent], current_chunk_size);
+    pCharacteristic->notify();
+    
+    sent += current_chunk_size;
+    delay(10); // Small delay between chunks
+  }
+}
+
+void setup() {
+  Serial.begin(SERIAL_SPEED);
+  Serial.println("Starting ESP32-CAM BLE Server");
+  
+  initCamera();
+  initBLE();
 }
 
 void loop() {
   if (deviceConnected) {
-    // Capture frame
-    camera_fb_t* fb = esp_camera_fb_get();
+    camera_fb_t * fb = esp_camera_fb_get();
     if (!fb) {
       Serial.println("Camera capture failed");
       return;
     }
 
-    // Send image size first
-    uint32_t imageSize = fb->len;
-    pCharacteristic->setValue((uint8_t*)&imageSize, sizeof(imageSize));
-    pCharacteristic->notify();
-    delay(20);  // Give some time for the notification to be sent
+    // Send the frame
+    sendFrame(fb->buf, fb->len);
 
-    // Send image data in chunks
-    size_t chunks = (fb->len + MTU_SIZE - 1) / MTU_SIZE;
-    for (size_t i = 0; i < chunks; i++) {
-      size_t start = i * MTU_SIZE;
-      size_t end = min(fb->len, start + MTU_SIZE);
-      size_t chunkSize = end - start;
-
-      pCharacteristic->setValue(fb->buf + start, chunkSize);
-      pCharacteristic->notify();
-      delay(20);  // Delay between chunks to prevent data loss
-    }
-
+    // Return the frame buffer to be reused
     esp_camera_fb_return(fb);
-    delay(100);  // Delay between frames
+    
+    // Add delay to control frame rate
+    delay(100); // Adjust this value to change frame rate
   }
-  delay(10);
 }
