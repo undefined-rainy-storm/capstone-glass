@@ -15,31 +15,31 @@ BlueController *BlueController::getInstance() {
 
 BlueController *blueController = BlueController::getInstance();
 
-void BlueController::sendFrame(uint8_t* frame_buffer, size_t frame_length) {
+void BlueController::sendFrame(uint8_t* frameBuffer, size_t frameLength) {
   if (!blueController->deviceConnected) return;
 
   // Send frame size first (4 bytes)
-  uint8_t size_buffer[4];
-  size_buffer[0] = (frame_length >> 24) & 0xFF;
-  size_buffer[1] = (frame_length >> 16) & 0xFF;
-  size_buffer[2] = (frame_length >> 8) & 0xFF;
-  size_buffer[3] = frame_length & 0xFF;
-  blueController->pCharacteristic->setValue(size_buffer, 4);
+  uint8_t frameBuffer[4];
+  frameBuffer[0] = (frameLength >> 24) & 0xFF;
+  frameBuffer[1] = (frameLength >> 16) & 0xFF;
+  frameBuffer[2] = (frameLength >> 8) & 0xFF;
+  frameBuffer[3] = frameLength & 0xFF;
+  blueController->pCharacteristic->setValue(frameBuffer, 4);
   blueController->pCharacteristic->notify();
   delay(DELAY_TRANSMISSION);
 
   // Send frame data in chunks
-  size_t chunk_size = MTU_SIZE - 3; // Account for BLE overhead
+  size_t chunkSize = MTU_SIZE - 3; // Account for BLE overhead
   size_t sent = 0;
   
-  while (sent < frame_length) {
-    size_t remaining = frame_length - sent;
-    size_t current_chunk_size = (remaining < chunk_size) ? remaining : chunk_size;
+  while (sent < frameLength) {
+    size_t remaining = frameLength - sent;
+    size_t currentChunkSize = (remaining < chunkSize) ? remaining : chunkSize;
     
-    blueController->pCharacteristic->setValue(&frame_buffer[sent], current_chunk_size);
+    blueController->pCharacteristic->setValue(&frame_buffer[sent], currentChunkSize);
     blueController->pCharacteristic->notify();
     
-    sent += current_chunk_size;
+    sent += currentChunkSize;
     delay(DELAY_BETWEEN_CHUNK);
   }
 }

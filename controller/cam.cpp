@@ -6,8 +6,8 @@ extern BlueController *blueController;
 
 void initCamera() {
   camera_config_t config;
-  config.ledc_channel = LEDC_CHANNEL_0;
-  config.ledc_timer = LEDC_TIMER_0;
+  config.ledc_channel = LEDC_CHANNEL;
+  config.ledc_timer = LEDC_TIMER;
   config.pin_d0 = Y2_GPIO_NUM;
   config.pin_d1 = Y3_GPIO_NUM;
   config.pin_d2 = Y4_GPIO_NUM;
@@ -24,8 +24,8 @@ void initCamera() {
   config.pin_sscb_scl = SIOC_GPIO_NUM;
   config.pin_pwdn = PWDN_GPIO_NUM;
   config.pin_reset = RESET_GPIO_NUM;
-  config.xclk_freq_hz = 20000000;
-  config.pixel_format = PIXFORMAT_JPEG;
+  config.xclk_freq_hz = XCLK_FREQ;
+  config.pixel_format = PIXEL_FORMAT;
 
   config.frame_size = FRAME_SIZE;
   config.jpeg_quality = JPEG_QUALITY;
