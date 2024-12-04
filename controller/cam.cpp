@@ -2,7 +2,7 @@
 #include "cam.h"
 #include "blue.h"
 
-extern BlueController *blueController;
+// extern BlueController *blueController;
 
 void initCamera() {
   camera_config_t config;
@@ -46,6 +46,7 @@ void initCamera() {
 }
 
 void loopCamera() {
+  BlueController *blueController = BlueController::getInstance();
   if (!blueController->deviceConnected) {
     camera_fb_t *fb = esp_camera_fb_get();
     if (!fb) {

@@ -6,15 +6,15 @@
 
 void setup() {
   Serial.begin(SERIAL_SPEED);
-  Serial.println("Starting ESP32-CAM BLE Server");
+  Serial.println("Setup Started.");
   
-  initBLE();
-  initCamera();
+  // initBLE();
+  // initCamera();
   initDisplay();
 }
 
 void loop() {
-  loopBLE();
-  loopCamera();
-  loopDisplay();
+  // loopBLE();
+  // loopCamera();
+  // loopDisplay();
 }

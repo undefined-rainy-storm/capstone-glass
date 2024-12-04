@@ -18,8 +18,6 @@ BlueController *blueController = BlueController::getInstance();
 void BlueController::sendFrame(uint8_t* frameBuffer, size_t frameLength) {
   if (!blueController->deviceConnected) return;
 
-  // Send frame size first (4 bytes)
-  uint8_t frameBuffer[4];
   frameBuffer[0] = (frameLength >> 24) & 0xFF;
   frameBuffer[1] = (frameLength >> 16) & 0xFF;
   frameBuffer[2] = (frameLength >> 8) & 0xFF;
@@ -36,7 +34,7 @@ void BlueController::sendFrame(uint8_t* frameBuffer, size_t frameLength) {
     size_t remaining = frameLength - sent;
     size_t currentChunkSize = (remaining < chunkSize) ? remaining : chunkSize;
     
-    blueController->pCharacteristic->setValue(&frame_buffer[sent], currentChunkSize);
+    blueController->pCharacteristic->setValue(&frameBuffer[sent], currentChunkSize);
     blueController->pCharacteristic->notify();
     
     sent += currentChunkSize;
@@ -59,6 +57,7 @@ class MyServerCallbacks: public BLEServerCallbacks {
 };
 
 void initBLE() {
+  Serial.println("Initializing BLE device");
   BLEDevice::init(DEVICE_NAME);
   
   blueController->pServer = BLEDevice::createServer();
