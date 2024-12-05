@@ -1,10 +1,9 @@
-#include "BleConnection.h"
-#include "BLEHIDDevice.h"
+#include "blue_connection.h"
 
-BleConnection::BleConnection(void) {
+BlueConnection::BlueConnection(void) {
 }
 
-void BleConnection::onConnect(BLEServer* server)
+void BlueConnection::onConnect(BLEServer* server)
 {
   this->connected = true;
   // Allow notifications for characteristics
@@ -15,7 +14,7 @@ void BleConnection::onConnect(BLEServer* server)
   // desc->setNotifications(true);
 }
 
-void BleConnection::onDisconnect(BLEServer* server)
+void BlueConnection::onDisconnect(BLEServer* server)
 {
   this->connected = false;
   // Disallow notifications for characteristics
