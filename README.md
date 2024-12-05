@@ -1,10 +1,15 @@
-# Capstone: Glass Controller
+# Project example with platformio + esp32 + ble
 
-## Compile from Arduino IDE
+If any problem to connect to bluetoth device (disconnect from OS)
+```
+$ ./remove-devices
+```
 
-1. Set Preferences > Additional boards manager URLs: `https://dl.espressif.com/dl/package_esp32_index.json`
-2. Boards Manager > Install "esp32" by Espressif Systems
-3. Select Other Board and Port > Select "AI Thinker ESP32-CAM"
-4. Tools > Set Configuration
-  - Flash Mode: "QIO"
-  - Partition Scheme: "Huge App (3MB No OTA/1MB SPIFFS)"
+List devices
+```
+bt-device -l
+```
+
+# References
+
+https://github.com/blackketter/ESP32-BLE-Combo

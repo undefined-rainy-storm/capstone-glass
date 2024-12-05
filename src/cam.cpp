@@ -1,6 +1,5 @@
 #include <Arduino.h>
 #include "cam.h"
-#include "blue.h"
 
 // extern BlueController *blueController;
 
@@ -37,7 +36,6 @@ void initCamera() {
     return;
   }
 
-  // Adjust camera settings
   sensor_t * s = esp_camera_sensor_get();
   s->set_brightness(s, 0);     // -2 to 2
   s->set_contrast(s, 0);       // -2 to 2
@@ -46,15 +44,4 @@ void initCamera() {
 }
 
 void loopCamera() {
-  BlueController *blueController = BlueController::getInstance();
-  if (!blueController->deviceConnected) {
-    camera_fb_t *fb = esp_camera_fb_get();
-    if (!fb) {
-      Serial.println("Camera capture failed");
-      return;
-    }
-    blueController->sendFrame(fb->buf, fb->len);
-    esp_camera_fb_return(fb);
-    delay(DELAY_BETWEEN_FRAME);
-  }
 }
