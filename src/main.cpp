@@ -27,14 +27,11 @@ void setup() {
 void loop() {
   esp_task_wdt_reset();
 
-  Serial.println("Loop Invoked");
-
   loopBlue();
   loopCamera();
   loopDisplay();
   Serial.printf("Free heap: %d\n", ESP.getFreeHeap());
   Serial.printf("Free PSRAM: %d\n", ESP.getFreePsram());
 
-  Serial.println(".");
   delay(1000);
 }

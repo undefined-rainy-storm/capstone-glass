@@ -1,8 +1,6 @@
 #include <Arduino.h>
 #include "cam.h"
 
-// extern BlueController *blueController;
-
 void initCamera() {
   camera_config_t config;
   config.ledc_channel = LEDC_CHANNEL;

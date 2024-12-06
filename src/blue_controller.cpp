@@ -43,12 +43,12 @@ void BlueController::taskServer(BlueController *controller) {
   BLEAdvertising *advertising = server->getAdvertising();
   advertising->addServiceUUID(service->getUUID());
   advertising->setScanResponse(false);
-  advertising->setMinPreferred(0x06);
-  return;
-  advertising->start();
-  // BLEDevice::startAdvertising();
+  advertising->setMinPreferred(0x0);
+  // return;
+  // advertising->start();
+  BLEDevice::startAdvertising();
 
-  vTaskDelay(portMAX_DELAY);
+  // vTaskDelay(portMAX_DELAY);
 }
 
 bool BlueController::isConnected() {
