@@ -33,15 +33,22 @@ void loopBlueCamera() {
         chunkSize
       );
       blueController->getCharacteristic()->notify();
-      
+
       offset += chunkSize;
       remainingLength -= chunkSize;
+      
+      Serial.printf("Sent %d bytes, Remaining %d bytes. (%d)\n", chunkSize, remainingLength, offset);
       
       // Add delay between chunks
       delay(NOTIFY_DELAY);
     }
 
     esp_camera_fb_return(fb);
+
+    uint16_t notifyEndMagic = 0x00;
+    blueController->getCharacteristic()->setValue(notifyEndMagic);
+    blueController->getCharacteristic()->notify();
+    delay(NOTIFY_DELAY);
   }
 }
 
