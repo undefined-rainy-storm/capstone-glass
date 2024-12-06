@@ -4,8 +4,8 @@
 #include "blue_connection.h"
 
 #define DEVICE_NAME         "ESP32-CAM"
-#define SERVICE_UUID        (uint16_t) 0x1812
-#define CHARACTERISTIC_UUID (uint16_t) 0x2A4D
+#define SERVICE_UUID        "10f96d87-446f-49e7-8bdf-9828d3804acc"
+#define CHARACTERISTIC_UUID "5be13433-d1d2-44bf-99b8-047c9c62b9eb"
 
 class BlueController {
 private:

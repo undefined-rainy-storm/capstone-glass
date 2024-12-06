@@ -2,7 +2,6 @@
 
 #include <BLEServer.h>
 #include <BLEDevice.h>
-#include <BLEUUID.h>
 #include <BLE2902.h>
 #include "blue_connection.h"
 
@@ -23,11 +22,11 @@ void BlueController::taskServer(BlueController *controller) {
   server->setCallbacks(controller->connection);
 
   // Service
-  BLEService *service = server->createService(BLEUUID(SERVICE_UUID));
+  BLEService *service = server->createService(SERVICE_UUID);
 
   // Characteristic
   controller->characteristic = service->createCharacteristic(
-    BLEUUID(CHARACTERISTIC_UUID),
+    CHARACTERISTIC_UUID,
     BLECharacteristic::PROPERTY_READ |
     BLECharacteristic::PROPERTY_WRITE |
     BLECharacteristic::PROPERTY_NOTIFY
