@@ -29,7 +29,8 @@ void BlueController::taskServer(BlueController *controller) {
     CHARACTERISTIC_UUID,
     BLECharacteristic::PROPERTY_READ |
     BLECharacteristic::PROPERTY_WRITE |
-    BLECharacteristic::PROPERTY_NOTIFY
+    BLECharacteristic::PROPERTY_NOTIFY |
+    BLECharacteristic::PROPERTY_INDICATE
   );
 
   // Descriptor
